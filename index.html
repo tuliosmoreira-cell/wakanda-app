@@ -3,26 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Wakanda - Grupo Fechado</title>
+    <title>WAKANDA - Oficial</title>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: black; color: white; }
-        .gradient-text {
-            background: linear-gradient(to right, #a855f7, #eab308);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
+        body { background-color: #000; color: #fff; font-family: sans-serif; }
+        .gold-grad { background: linear-gradient(135deg, #bf953f, #aa771c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
     </style>
 </head>
 <body>
     <div id="root"></div>
-
     <script type="text/babel">
         const { useState } = React;
-
         const INITIAL_USERS = [
             { id: 1, name: 'Tulipa', role: 'ADM', score: 0 },
             { id: 2, name: 'Anderson', role: 'USER', score: 0 },
@@ -38,80 +32,88 @@
         function App() {
             const [view, setView] = useState('LANDING');
             const [user, setUser] = useState(null);
+            const [members, setMembers] = useState(INITIAL_USERS);
 
-            const handleGroupPass = (e) => {
-                if (e.target.value.toLowerCase() === 'wakanda') setView('LOGIN');
-            };
-
-            const handleLogin = (name, pass) => {
-                if (name === 'Tulipa' && pass !== 'tulipa2003') {
-                    alert("Senha de ADM incorreta!");
-                    return;
-                }
-                const found = INITIAL_USERS.find(u => u.name === name);
-                setUser(found);
-                setView('DASHBOARD');
+            const updateScore = (id, val) => {
+                setMembers(members.map(m => m.id === id ? {...m, score: m.score + val} : m));
             };
 
             return (
-                <div className="min-h-screen flex flex-col">
+                <div className="max-w-md mx-auto min-h-screen flex flex-col border-x border-zinc-900">
                     {view === 'LANDING' && (
-                        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
-                            <div className="w-64 h-64 bg-zinc-900 rounded-full mb-8 flex items-center justify-center border-2 border-purple-500 shadow-[0_0_50px_rgba(168,85,247,0.2)]">
-                                <span className="text-6xl text-silver">🐾</span>
-                            </div>
-                            <h1 className="text-5xl font-black mb-4 gradient-text">WAKANDA</h1>
-                            <button onClick={() => setView('GROUP_AUTH')} className="bg-white text-black px-10 py-4 rounded-full font-bold tracking-widest hover:scale-105 transition">ENTRAR</button>
+                        <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
+                            <img src="image_7b4123.png" className="w-64 mb-12" alt="Wakanda" />
+                            <h1 className="text-3xl font-bold gold-grad mb-8 italic">WAKANDA</h1>
+                            <button onClick={() => setView('PASS_CHECK')} className="w-full bg-white text-black py-4 rounded-full font-black">ENTRAR</button>
                         </div>
                     )}
 
-                    {view === 'GROUP_AUTH' && (
-                        <div className="flex-1 flex flex-col items-center justify-center p-6">
-                            <p className="text-zinc-500 mb-4 uppercase tracking-widest text-xs">Senha do Grupo</p>
-                            <input type="password" placeholder="••••" className="bg-transparent border-b-2 border-purple-900 text-center text-4xl p-2 outline-none focus:border-yellow-500 w-full max-w-xs transition-all" onChange={handleGroupPass} />
+                    {view === 'PASS_CHECK' && (
+                        <div className="flex-1 flex flex-col justify-center p-8">
+                            <input type="password" placeholder="SENHA DO GRUPO" className="bg-transparent border-b border-purple-900 p-4 text-center text-2xl outline-none" onChange={(e) => e.target.value.toLowerCase() === 'wakanda' && setView('LOGIN')} />
                         </div>
                     )}
 
                     {view === 'LOGIN' && (
-                        <div className="flex-1 flex flex-col items-center justify-center p-6">
-                            <div className="w-full max-w-sm space-y-4">
-                                <h2 className="text-2xl font-bold mb-6 text-center">Identifique-se</h2>
-                                <select id="userName" className="w-full bg-zinc-900 p-4 rounded-2xl border border-zinc-800 outline-none appearance-none">
-                                    {INITIAL_USERS.map(u => <option key={u.id} value={u.name}>{u.name}</option>)}
-                                </select>
-                                <input id="userPass" type="password" placeholder="Sua senha" className="w-full bg-zinc-900 p-4 rounded-2xl border border-zinc-800 outline-none" />
-                                <button onClick={() => handleLogin(document.getElementById('userName').value, document.getElementById('userPass').value)} className="w-full bg-purple-600 p-4 rounded-2xl font-bold uppercase">Entrar</button>
-                            </div>
+                        <div className="flex-1 flex flex-col justify-center p-8 space-y-4">
+                            <select id="m" className="w-full bg-zinc-900 p-4 rounded-2xl outline-none">
+                                {members.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
+                            </select>
+                            <input id="p" type="password" placeholder="Sua senha" className="w-full bg-zinc-900 p-4 rounded-2xl outline-none" />
+                            <button onClick={() => {
+                                const n = document.getElementById('m').value;
+                                const s = document.getElementById('p').value;
+                                if (n === 'Tulipa' && s !== 'tulipa2003') return alert("Erro");
+                                setUser(members.find(m => m.name === n));
+                                setView('DASHBOARD');
+                            }} className="w-full bg-purple-900 py-4 rounded-2xl font-bold">LOGAR</button>
                         </div>
                     )}
 
                     {view === 'DASHBOARD' && (
-                        <div className="flex-1">
-                            <header className="p-6 flex justify-between items-center border-b border-zinc-900">
-                                <span className="font-bold tracking-tighter text-xl">WAKANDA</span>
-                                {user?.role === 'ADM' && <span className="bg-yellow-500 text-black px-3 py-1 rounded-full text-[10px] font-bold">ADM</span>}
-                            </header>
-                            <main className="p-6">
-                                <div className="bg-zinc-900 p-6 rounded-[2rem] border border-zinc-800 mb-8">
-                                    <p className="text-zinc-400 text-xs uppercase mb-1">Bem-vindo,</p>
-                                    <h3 className="text-3xl font-bold">{user?.name}</h3>
-                                </div>
-                                <h4 className="text-zinc-500 text-xs uppercase mb-4 tracking-widest">Ranking Global</h4>
-                                <div className="space-y-3">
-                                    {INITIAL_USERS.map((u, i) => (
-                                        <div key={u.id} className="flex items-center justify-between bg-zinc-900/50 p-4 rounded-2xl border border-zinc-800/50">
-                                            <span className="font-medium">{i+1}. {u.name}</span>
-                                            <span className="text-yellow-500 font-bold">{u.score} PTS</span>
+                        <div className="flex-1 p-6">
+                            <div className="flex justify-between mb-8">
+                                <span className="font-bold gold-grad">WAKANDA OS</span>
+                                {user.role === 'ADM' && <button onClick={() => setView('ADMIN')} className="bg-white text-black px-4 py-1 rounded-full text-xs font-bold uppercase">Painel ADM</button>}
+                            </div>
+                            <div className="bg-zinc-900 p-6 rounded-3xl mb-8">
+                                <p className="text-zinc-500 text-xs mb-1">Pontos de {user.name}</p>
+                                <div className="text-4xl font-bold">{user.score}</div>
+                            </div>
+                            <h3 className="text-zinc-500 text-xs mb-4 uppercase tracking-widest">Ranking</h3>
+                            <div className="space-y-2">
+                                {members.sort((a,b) => b.score - a.score).map((m, i) => (
+                                    <div key={m.id} className="flex justify-between p-4 bg-zinc-900/50 rounded-2xl border border-zinc-800">
+                                        <span>{i+1}. {m.name}</span>
+                                        <span className="text-yellow-500 font-bold">{m.score} PTS</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {view === 'ADMIN' && (
+                        <div className="flex-1 p-6">
+                            <div className="flex justify-between mb-8">
+                                <h2 className="font-bold gold-grad">CONTROLE ADM</h2>
+                                <button onClick={() => setView('DASHBOARD')} className="text-xs underline">Voltar</button>
+                            </div>
+                            <div className="space-y-4">
+                                {members.map(m => (
+                                    <div key={m.id} className="flex items-center justify-between p-4 bg-zinc-900 rounded-2xl">
+                                        <span className="font-bold text-sm">{m.name}</span>
+                                        <div className="flex gap-2">
+                                            <button onClick={() => updateScore(m.id, -10)} className="w-8 h-8 bg-zinc-800 rounded-lg">-</button>
+                                            <button onClick={() => updateScore(m.id, 10)} className="w-8 h-8 bg-yellow-600 text-black rounded-lg">+</button>
                                         </div>
-                                    ))}
-                                </div>
-                            </main>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     )}
                 </div>
             );
         }
-
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
