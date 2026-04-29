@@ -10,87 +10,123 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Inter:wght@400;900&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #000; color: #fff; font-family: 'Inter', sans-serif; }
+        body { background-color: #000; color: #fff; font-family: 'Inter', sans-serif; overflow-x: hidden; }
         .font-tech { font-family: 'Syncopate', sans-serif; }
         .gold-grad { background: linear-gradient(135deg, #bf953f, #fcf6ba, #aa771c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .card { background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 1.5rem; }
-        .nav-active { color: #bf953f; border-top: 2px solid #bf953f; }
+        .card { background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 1.5rem; transition: all 0.3s ease; }
+        .card:active { transform: scale(0.98); border-color: #333; }
+        .btn-adm { background: linear-gradient(135deg, #bf953f, #aa771c); color: #000; font-weight: 900; }
     </style>
 </head>
 <body>
     <div id="root"></div>
-    <script type="text/babel">
-        const { useState } = React;
 
-        function App() {
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, onSnapshot, updateDoc, arrayUnion, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBVsYfwiz38Xs_u_n0qDftX1jmKLC_mlDQ",
+            authDomain: "wakanda-app-db09b.firebaseapp.com",
+            projectId: "wakanda-app-db09b",
+            storageBucket: "wakanda-app-db09b.firebasestorage.app",
+            messagingSenderId: "56811639122",
+            appId: "1:56811639122:web:fb8e325459c3affd11ea8b"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // --- COMPONENTE REACT ---
+        const { useState, useEffect } = React;
+
+        function WakandaApp() {
             const [view, setView] = useState('LANDING');
-            const [tab, setTab] = useState('RANKING'); // RANKING, MISSÕES, EVENTOS
+            const [tab, setTab] = useState('RANKING');
             const [user, setUser] = useState(null);
-            
-            const [members, setMembers] = useState([
-                { id: 1, name: 'Tulipa', role: 'ADM', score: 0 },
-                { id: 2, name: 'Anderson', role: 'USER', score: 0 },
-                { id: 3, name: 'Yuri', role: 'USER', score: 0 },
-                { id: 4, name: 'Negão', role: 'USER', score: 0 },
-                { id: 5, name: 'Léo', role: 'USER', score: 0 }
-            ]);
+            const [members, setMembers] = useState([]);
+            const [missions, setMissions] = useState([]);
 
-            const [missions, setMissions] = useState([
-                { id: 1, title: 'Presença no Rolê', points: 50, status: 'Ativa' }
-            ]);
+            // Sincronizar dados em tempo real
+            useEffect(() => {
+                const unsub = onSnapshot(doc(db, "wakanda", "globalData"), (docSnap) => {
+                    if (docSnap.exists()) {
+                        setMembers(docSnap.data().members || []);
+                        setMissions(docSnap.data().missions || []);
+                    } else {
+                        // Inicializar banco se vazio
+                        const initialData = {
+                            members: [
+                                { id: 1, name: 'Tulipa', role: 'ADM', score: 0 },
+                                { id: 2, name: 'Anderson', role: 'USER', score: 0 },
+                                { id: 3, name: 'Yuri', role: 'USER', score: 0 },
+                                { id: 4, name: 'Negão', role: 'USER', score: 0 },
+                                { id: 5, name: 'Thales', role: 'USER', score: 0 }
+                            ],
+                            missions: [{ id: 1, title: 'Primeiro Acesso', points: 10 }]
+                        };
+                        setDoc(doc(db, "wakanda", "globalData"), initialData);
+                    }
+                });
+                return () => unsub();
+            }, []);
 
-            const updateScore = (id, val) => {
-                setMembers(prev => prev.map(m => m.id === id ? { ...m, score: m.score + val } : m));
+            const updateScore = async (id, val) => {
+                const newMembers = members.map(m => m.id === id ? { ...m, score: m.score + val } : m);
+                await updateDoc(doc(db, "wakanda", "globalData"), { members: newMembers });
             };
 
-            const addMission = (title, pts) => {
-                setMissions([...missions, { id: Date.now(), title, points: pts, status: 'Ativa' }]);
+            const addMission = async (title, pts) => {
+                const newMission = { id: Date.now(), title, points: parseInt(pts) };
+                await updateDoc(doc(db, "wakanda", "globalData"), { missions: arrayUnion(newMission) });
             };
 
             if (view === 'LANDING') return (
-                <div className="flex flex-col items-center justify-center min-h-screen p-8 text-center">
-                    <img src="image_7b4123.png" className="w-48 mb-10" alt="Pantera" />
-                    <h1 className="text-3xl font-tech gold-grad mb-12">WAKANDA</h1>
-                    <button onClick={() => setView('LOGIN')} className="w-full bg-white text-black py-4 rounded-full font-black">ENTRAR NO SISTEMA</button>
+                <div className="flex flex-col items-center justify-center min-h-screen p-8">
+                    <img src="image_7b4123.png" className="w-52 mb-12 shadow-2xl" alt="Pantera" />
+                    <h1 className="text-4xl font-tech gold-grad mb-16 italic tracking-tighter">WAKANDA</h1>
+                    <button onClick={() => setView('LOGIN')} className="w-full bg-white text-black py-5 rounded-full font-black text-xs tracking-widest active:scale-95 transition">ACESSAR TERMINAL</button>
                 </div>
             );
 
             if (view === 'LOGIN') return (
                 <div className="flex flex-col justify-center min-h-screen p-8 space-y-4">
-                    <h2 className="font-tech text-center mb-6">IDENTIFIQUE-SE</h2>
-                    <select id="u" className="w-full bg-zinc-900 p-5 rounded-2xl outline-none">
+                    <h2 className="font-tech text-center mb-8 gold-grad text-sm">AUTENTICAÇÃO</h2>
+                    <select id="u" className="w-full bg-zinc-900 p-5 rounded-3xl outline-none border border-zinc-800 text-zinc-400">
                         {members.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
                     </select>
-                    <input id="p" type="password" placeholder="Sua senha" className="w-full bg-zinc-900 p-5 rounded-2xl outline-none" />
+                    <input id="p" type="password" placeholder="Senha" className="w-full bg-zinc-900 p-5 rounded-3xl outline-none border border-zinc-800 focus:border-yellow-600" />
                     <button onClick={() => {
                         const n = document.getElementById('u').value;
                         const s = document.getElementById('p').value;
-                        if (n === 'Tulipa' && s !== 'tulipa2003') return alert("Erro");
+                        if (n === 'Tulipa' && s !== 'tulipa2003') return alert("Acesso Negado");
                         setUser(members.find(m => m.name === n));
                         setView('APP');
-                    }} className="w-full bg-purple-900 py-4 rounded-2xl font-bold">LOGAR</button>
+                    }} className="w-full bg-purple-900 py-5 rounded-3xl font-black text-xs">LOGAR</button>
                 </div>
             );
 
+            const currentUserData = members.find(m => m.id === user.id) || user;
+
             return (
                 <div className="max-w-md mx-auto min-h-screen flex flex-col pb-24">
-                    <header className="p-6 flex justify-between items-center border-b border-zinc-900">
-                        <span className="font-tech text-[10px] gold-grad">WKND OS</span>
-                        {user.role === 'ADM' && <button onClick={() => setView('ADMIN')} className="bg-white text-black px-3 py-1 rounded-full text-[10px] font-black uppercase">Painel ADM</button>}
+                    <header className="p-6 flex justify-between items-center border-b border-zinc-900 backdrop-blur-md sticky top-0 z-40 bg-black/50">
+                        <span className="font-tech text-[9px] gold-grad tracking-[0.3em]">WKND.OS_v2</span>
+                        {user.role === 'ADM' && <button onClick={() => setView('ADMIN')} className="btn-adm px-4 py-1.5 rounded-full text-[9px] uppercase shadow-lg shadow-yellow-600/20">PAINEL ADM</button>}
                     </header>
 
                     <main className="p-6">
                         {tab === 'RANKING' && (
                             <div className="space-y-6">
-                                <div className="card p-6 border-l-4 border-yellow-600">
-                                    <p className="text-zinc-500 text-[10px] uppercase tracking-widest mb-1">Seu Score</p>
-                                    <div className="text-4xl font-black">{user.score} <span className="text-xs text-zinc-500">PTS</span></div>
+                                <div className="card p-8 border-t border-zinc-800">
+                                    <p className="text-zinc-600 text-[10px] uppercase font-tech mb-2">Seu Status</p>
+                                    <div className="text-5xl font-black tracking-tighter">{currentUserData.score} <span className="text-xs text-zinc-600 font-normal">PTS</span></div>
                                 </div>
-                                <h3 className="font-tech text-[10px] text-zinc-600 uppercase">Ranking Geral</h3>
+                                <h3 className="font-tech text-[10px] text-zinc-700 uppercase mt-10 mb-4">Hierarquia de Pontos</h3>
                                 {members.sort((a,b) => b.score - a.score).map((m, i) => (
-                                    <div key={m.id} className="flex justify-between p-4 card items-center">
-                                        <span className="text-sm font-bold">{i+1}. {m.name}</span>
-                                        <span className="text-yellow-600 font-bold">{m.score}</span>
+                                    <div key={m.id} className="flex justify-between p-5 card items-center mb-3">
+                                        <span className="text-sm font-bold text-zinc-300"><span className="text-zinc-800 mr-3">#0{i+1}</span>{m.name}</span>
+                                        <span className="text-yellow-600 font-black text-xs font-tech">{m.score}</span>
                                     </div>
                                 ))}
                             </div>
@@ -98,62 +134,66 @@
 
                         {tab === 'MISSÕES' && (
                             <div className="space-y-4">
-                                <h3 className="font-tech text-[10px] text-zinc-600 uppercase mb-6 text-center">Missões Ativas</h3>
-                                {missions.map(m => (
-                                    <div key={m.id} className="card p-5 border-l-4 border-purple-900">
-                                        <h4 className="font-bold text-sm mb-1">{m.title}</h4>
-                                        <p className="text-zinc-500 text-[10px]">Recompensa: <span className="text-purple-400">+{m.points} pts</span></p>
+                                <h3 className="font-tech text-[10px] text-zinc-700 uppercase mb-8 text-center">Protocolos Ativos</h3>
+                                {missions.length === 0 ? <p className="text-center text-zinc-700 py-20 text-xs">Aguardando ordens...</p> : missions.map(m => (
+                                    <div key={m.id} className="card p-6 border-l-2 border-purple-800">
+                                        <h4 className="font-bold text-sm mb-2 uppercase tracking-tight">{m.title}</h4>
+                                        <div className="flex justify-between items-center">
+                                            <span className="text-zinc-600 text-[10px]">RECOMPENSA:</span>
+                                            <span className="text-purple-500 font-black text-xs">+{m.points} PTS</span>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
                         )}
 
                         {tab === 'EVENTOS' && (
-                            <div className="text-center py-20">
-                                <p className="text-zinc-600 font-tech text-xs">Nenhum evento agendado</p>
+                            <div className="flex flex-col items-center justify-center py-32 opacity-20">
+                                <div className="w-12 h-12 border border-zinc-500 rounded-full flex items-center justify-center mb-4">!</div>
+                                <p className="font-tech text-[9px] tracking-widest uppercase text-zinc-400">Sem Eventos</p>
                             </div>
                         )}
                     </main>
 
-                    {/* BARRA DE NAVEGAÇÃO */}
-                    <nav className="fixed bottom-0 left-0 right-0 bg-black/90 border-t border-zinc-900 flex justify-around p-4 backdrop-blur-md">
+                    <nav className="fixed bottom-0 left-0 right-0 bg-black/80 border-t border-zinc-900 flex justify-around p-5 backdrop-blur-xl z-40">
                         {['RANKING', 'MISSÕES', 'EVENTOS'].map(t => (
-                            <button key={t} onClick={() => setTab(t)} className={`text-[10px] font-black tracking-widest ${tab === t ? 'text-yellow-500' : 'text-zinc-600'}`}>
+                            <button key={t} onClick={() => setTab(t)} className={`text-[10px] font-black tracking-widest transition-all ${tab === t ? 'text-yellow-500 scale-110' : 'text-zinc-700'}`}>
                                 {t}
                             </button>
                         ))}
                     </nav>
 
-                    {/* ÁREA ADM (MODAL) */}
                     {view === 'ADMIN' && (
                         <div className="fixed inset-0 bg-black z-50 p-6 overflow-y-auto">
-                            <div className="flex justify-between items-center mb-10">
-                                <h2 className="font-tech gold-grad">CONTROLE TULIPA</h2>
-                                <button onClick={() => setView('APP')} className="text-xs underline">Fechar</button>
+                            <div className="flex justify-between items-center mb-12">
+                                <h2 className="font-tech gold-grad text-xs tracking-widest">CONTROL_CENTER</h2>
+                                <button onClick={() => setView('APP')} className="text-[10px] font-black border border-zinc-800 px-4 py-2 rounded-full">SAIR</button>
                             </div>
                             
-                            <section className="mb-10">
-                                <h3 className="text-[10px] text-zinc-500 uppercase mb-4">Gerenciar Pontos</h3>
+                            <section className="mb-12">
+                                <h3 className="text-[9px] text-zinc-600 uppercase mb-6 font-tech">Ajuste de Créditos</h3>
                                 {members.map(m => (
-                                    <div key={m.id} className="flex items-center justify-between p-4 card mb-2">
-                                        <span className="text-sm font-bold">{m.name}</span>
-                                        <div className="flex gap-2">
-                                            <button onClick={() => updateScore(m.id, -10)} className="w-8 h-8 bg-zinc-900 rounded-lg">-</button>
-                                            <button onClick={() => updateScore(m.id, 10)} className="w-8 h-8 bg-yellow-600 text-black rounded-lg">+</button>
+                                    <div key={m.id} className="flex items-center justify-between p-4 card mb-3">
+                                        <span className="text-xs font-bold">{m.name}</span>
+                                        <div className="flex gap-3">
+                                            <button onClick={() => updateScore(m.id, -10)} className="w-10 h-10 bg-zinc-900 rounded-xl font-black">-</button>
+                                            <button onClick={() => updateScore(m.id, 10)} className="w-10 h-10 bg-yellow-600 text-black rounded-xl font-black">+</button>
                                         </div>
                                     </div>
                                 ))}
                             </section>
 
                             <section>
-                                <h3 className="text-[10px] text-zinc-500 uppercase mb-4">Lançar Nova Missão</h3>
-                                <div className="card p-4 space-y-3">
-                                    <input id="mT" placeholder="Nome da Missão" className="w-full bg-zinc-900 p-3 rounded-xl text-xs outline-none" />
-                                    <input id="mP" type="number" placeholder="Pontos" className="w-full bg-zinc-900 p-3 rounded-xl text-xs outline-none" />
+                                <h3 className="text-[9px] text-zinc-600 uppercase mb-6 font-tech">Nova Missão</h3>
+                                <div className="card p-6 space-y-4">
+                                    <input id="mT" placeholder="Objetivo" className="w-full bg-zinc-900 p-4 rounded-2xl text-xs outline-none border border-zinc-800" />
+                                    <input id="mP" type="number" placeholder="Valor em PTS" className="w-full bg-zinc-900 p-4 rounded-2xl text-xs outline-none border border-zinc-800" />
                                     <button onClick={() => {
                                         addMission(document.getElementById('mT').value, document.getElementById('mP').value);
-                                        alert("Missão lançada!");
-                                    }} className="w-full bg-purple-900 py-3 rounded-xl text-xs font-bold">POSTAR MISSÃO</button>
+                                        document.getElementById('mT').value = '';
+                                        document.getElementById('mP').value = '';
+                                        alert("Missão Enviada!");
+                                    }} className="w-full bg-purple-900 py-4 rounded-2xl text-xs font-black tracking-widest">PUBLICAR PROTOCOLO</button>
                                 </div>
                             </section>
                         </div>
@@ -161,8 +201,9 @@
                 </div>
             );
         }
+
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        root.render(<WakandaApp />);
     </script>
 </body>
 </html>
