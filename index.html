@@ -3,185 +3,105 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WAKANDA - OS</title>
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <title>WAKANDA OS</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Syncopate:wght@700&family=Inter:wght@400;900&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #000; color: #fff; font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        body { background-color: #000; color: #fff; font-family: 'Inter', sans-serif; }
         .font-tech { font-family: 'Syncopate', sans-serif; }
         .gold-grad { background: linear-gradient(135deg, #bf953f, #fcf6ba, #aa771c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
         .card { background: #0a0a0a; border: 1px solid #1a1a1a; border-radius: 1.5rem; }
-        .btn-adm { background: linear-gradient(135deg, #bf953f, #aa771c); color: #000; font-weight: 900; }
-        input, select { background: #111 !important; border: 1px solid #222 !important; color: white !important; }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
-    <script type="babel">
+    <script type="text/babel">
         const { useState, useEffect } = React;
 
-        function WakandaApp() {
+        function App() {
             const [view, setView] = useState('LANDING');
             const [tab, setTab] = useState('RANKING');
             const [user, setUser] = useState(null);
             
-            // Dados iniciais
-            const [members, setMembers] = useState(() => {
-                const saved = localStorage.getItem('wknd_members');
-                return saved ? JSON.parse(saved) : [
-                    { id: 1, name: 'Tulipa', role: 'ADM', score: 0 },
-                    { id: 2, name: 'Anderson', role: 'USER', score: 0 },
-                    { id: 3, name: 'Yuri', role: 'USER', score: 0 },
-                    { id: 4, name: 'Negão', role: 'USER', score: 0 },
-                    { id: 5, name: 'Thales', role: 'USER', score: 0 }
-                ];
-            });
-
-            const [missions, setMissions] = useState(() => {
-                const saved = localStorage.getItem('wknd_missions');
-                return saved ? JSON.parse(saved) : [
-                    { id: 1, title: 'Primeiro Acesso ao Sistema', points: 10 }
-                ];
-            });
-
-            // Salvar sempre que houver alteração
-            useEffect(() => {
-                localStorage.setItem('wknd_members', JSON.stringify(members));
-                localStorage.setItem('wknd_missions', JSON.stringify(missions));
-            }, [members, missions]);
+            const [members, setMembers] = useState([
+                { id: 1, name: 'Tulipa', role: 'ADM', score: 0 },
+                { id: 2, name: 'Anderson', role: 'USER', score: 0 },
+                { id: 3, name: 'Yuri', role: 'USER', score: 0 },
+                { id: 4, name: 'Negão', role: 'USER', score: 0 },
+                { id: 5, name: 'Thales', role: 'USER', score: 0 }
+            ]);
 
             const updateScore = (id, val) => {
                 setMembers(prev => prev.map(m => m.id === id ? { ...m, score: m.score + val } : m));
             };
 
-            const addMission = (title, pts) => {
-                if(!title || !pts) return;
-                const newM = { id: Date.now(), title, points: parseInt(pts) };
-                setMissions([...missions, newM]);
-            };
-
             if (view === 'LANDING') return (
-                <div className="flex flex-col items-center justify-center min-h-screen p-8 text-center">
-                    <div className="w-40 h-40 mb-12 bg-zinc-900 rounded-full flex items-center justify-center border border-zinc-800">
-                        <span className="text-4xl">🐾</span>
-                    </div>
-                    <h1 className="text-4xl font-tech gold-grad mb-16 tracking-tighter">WAKANDA</h1>
-                    <button onClick={() => setView('LOGIN')} className="w-full bg-white text-black py-5 rounded-full font-black text-xs tracking-widest active:scale-95 transition">INICIAR TERMINAL</button>
+                <div className="flex flex-col items-center justify-center min-h-screen p-8">
+                    <h1 className="text-4xl font-tech gold-grad mb-16 tracking-tighter italic">WAKANDA</h1>
+                    <button onClick={() => setView('LOGIN')} className="w-full bg-white text-black py-5 rounded-full font-black text-xs tracking-widest">ENTRAR NO SISTEMA</button>
                 </div>
             );
 
             if (view === 'LOGIN') return (
                 <div className="flex flex-col justify-center min-h-screen p-8 space-y-4">
                     <h2 className="font-tech text-center mb-8 gold-grad text-sm uppercase">Autenticação</h2>
-                    <select id="u" className="w-full p-5 rounded-3xl outline-none">
+                    <select id="u" className="w-full p-5 rounded-3xl bg-zinc-900 border border-zinc-800 text-white">
                         {members.map(m => <option key={m.id} value={m.name}>{m.name}</option>)}
                     </select>
-                    <input id="p" type="password" placeholder="Código de Acesso" className="w-full p-5 rounded-3xl outline-none" />
+                    <input id="p" type="password" placeholder="Código de Acesso" className="w-full p-5 rounded-3xl bg-zinc-900 border border-zinc-800 text-white" />
                     <button onClick={() => {
                         const n = document.getElementById('u').value;
                         const s = document.getElementById('p').value;
-                        // Senha padrão para ADM (Tulipa)
                         if (n === 'Tulipa' && s !== 'tulipa2003') return alert("Código Incorreto");
                         setUser(members.find(m => m.name === n));
                         setView('APP');
                     }} className="w-full bg-zinc-100 text-black py-5 rounded-3xl font-black text-xs">ACESSAR</button>
-                    <button onClick={() => setView('LANDING')} className="text-zinc-600 text-[10px] font-tech uppercase">Voltar</button>
                 </div>
             );
 
             return (
                 <div className="max-w-md mx-auto min-h-screen flex flex-col pb-24">
-                    <header className="p-6 flex justify-between items-center border-b border-zinc-900 sticky top-0 z-40 bg-black/80 backdrop-blur-md">
+                    <header className="p-6 flex justify-between items-center border-b border-zinc-900 sticky top-0 bg-black">
                         <span className="font-tech text-[9px] gold-grad tracking-widest">WKND.OS_v2</span>
                         {user.role === 'ADM' && (
-                            <button onClick={() => setView('ADMIN')} className="btn-adm px-4 py-2 rounded-full text-[9px] uppercase tracking-tighter shadow-lg shadow-yellow-600/20">PAINEL ADM</button>
+                            <button onClick={() => setView('ADMIN')} className="bg-yellow-600 text-black px-4 py-2 rounded-full text-[9px] font-black uppercase">PAINEL ADM</button>
                         )}
                     </header>
 
                     <main className="p-6">
-                        {tab === 'RANKING' && (
-                            <div className="space-y-6">
-                                <div className="card p-8 border-t border-zinc-800">
-                                    <p className="text-zinc-600 text-[10px] uppercase font-tech mb-2 tracking-widest">Sua Pontuação</p>
-                                    <div className="text-5xl font-black tracking-tighter">
-                                        {members.find(m => m.id === user.id)?.score || 0} 
-                                        <span className="text-xs text-zinc-600 font-normal ml-2">PTS</span>
-                                    </div>
-                                </div>
-                                <h3 className="font-tech text-[10px] text-zinc-700 uppercase mt-10 mb-4 tracking-widest">Líderes de Wakanda</h3>
-                                {members.sort((a,b) => b.score - a.score).map((m, i) => (
-                                    <div key={m.id} className="flex justify-between p-5 card items-center mb-3">
-                                        <span className="text-sm font-bold text-zinc-300">
-                                            <span className="text-zinc-800 mr-3">#0{i+1}</span>
-                                            {m.name}
-                                        </span>
-                                        <span className="text-yellow-600 font-black text-xs font-tech">{m.score}</span>
-                                    </div>
-                                ))}
+                        <div className="card p-8 border-t border-zinc-800 mb-8 text-center">
+                            <p className="text-zinc-600 text-[10px] uppercase font-tech mb-2 tracking-widest">Sua Pontuação</p>
+                            <div className="text-5xl font-black">{members.find(m => m.id === user.id)?.score || 0}</div>
+                        </div>
+                        
+                        <h3 className="font-tech text-[10px] text-zinc-700 uppercase mb-4 tracking-widest">Ranking Atual</h3>
+                        {members.sort((a,b) => b.score - a.score).map((m, i) => (
+                            <div key={m.id} className="flex justify-between p-5 card items-center mb-3">
+                                <span className="text-sm font-bold text-zinc-300">#0{i+1} {m.name}</span>
+                                <span className="text-yellow-600 font-black text-xs font-tech">{m.score} PTS</span>
                             </div>
-                        )}
-
-                        {tab === 'MISSÕES' && (
-                            <div className="space-y-4">
-                                <h3 className="font-tech text-[10px] text-zinc-700 uppercase mb-8 text-center tracking-widest">Objetivos Ativos</h3>
-                                {missions.map(m => (
-                                    <div key={m.id} className="card p-6 border-l-2 border-yellow-800">
-                                        <h4 className="font-bold text-sm mb-2 uppercase tracking-tight text-zinc-200">{m.title}</h4>
-                                        <div className="flex justify-between items-center">
-                                            <span className="text-zinc-600 text-[10px]">VALOR:</span>
-                                            <span className="text-yellow-500 font-black text-xs">+{m.points} XP</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </main>
-
-                    <nav className="fixed bottom-0 left-0 right-0 bg-black/90 border-t border-zinc-900 flex justify-around p-5 backdrop-blur-xl z-40">
-                        {['RANKING', 'MISSÕES'].map(t => (
-                            <button key={t} onClick={() => setTab(t)} className={`text-[10px] font-black tracking-widest transition-all ${tab === t ? 'text-yellow-500' : 'text-zinc-700'}`}>
-                                {t}
-                            </button>
                         ))}
-                    </nav>
+                    </main>
 
                     {view === 'ADMIN' && (
                         <div className="fixed inset-0 bg-black z-50 p-6 overflow-y-auto">
-                            <div className="flex justify-between items-center mb-12">
-                                <h2 className="font-tech gold-grad text-xs tracking-widest">ADMIN_CORE</h2>
-                                <button onClick={() => setView('APP')} className="text-[10px] font-black border border-zinc-800 px-6 py-2 rounded-full">FECHAR</button>
+                            <div className="flex justify-between items-center mb-10">
+                                <h2 className="font-tech gold-grad text-xs tracking-widest">CONTROLE</h2>
+                                <button onClick={() => setView('APP')} className="text-[10px] font-black border border-zinc-800 px-6 py-2 rounded-full">VOLTAR</button>
                             </div>
-                            
-                            <section className="mb-12">
-                                <h3 className="text-[9px] text-zinc-600 uppercase mb-6 font-tech">Gerenciar Pontos</h3>
-                                {members.map(m => (
-                                    <div key={m.id} className="flex items-center justify-between p-4 card mb-3">
-                                        <span className="text-xs font-bold">{m.name}</span>
-                                        <div className="flex gap-2">
-                                            <button onClick={() => updateScore(m.id, -5)} className="w-10 h-10 bg-zinc-900 rounded-xl font-bold border border-zinc-800">-5</button>
-                                            <button onClick={() => updateScore(m.id, 5)} className="w-10 h-10 bg-yellow-600 text-black rounded-xl font-bold">+5</button>
-                                        </div>
+                            {members.map(m => (
+                                <div key={m.id} className="flex items-center justify-between p-4 card mb-3">
+                                    <span className="text-xs font-bold">{m.name}</span>
+                                    <div className="flex gap-2">
+                                        <button onClick={() => updateScore(m.id, -5)} className="w-10 h-10 bg-zinc-900 rounded-xl font-bold border border-zinc-800">-5</button>
+                                        <button onClick={() => updateScore(m.id, 5)} className="w-10 h-10 bg-yellow-600 text-black rounded-xl font-bold">+5</button>
                                     </div>
-                                ))}
-                            </section>
-
-                            <section>
-                                <h3 className="text-[9px] text-zinc-600 uppercase mb-6 font-tech">Criar Nova Missão</h3>
-                                <div className="card p-6 space-y-4">
-                                    <input id="mT" placeholder="Nome da Missão" className="w-full p-4 rounded-2xl text-xs outline-none" />
-                                    <input id="mP" type="number" placeholder="Pontuação" className="w-full p-4 rounded-2xl text-xs outline-none" />
-                                    <button onClick={() => {
-                                        addMission(document.getElementById('mT').value, document.getElementById('mP').value);
-                                        document.getElementById('mT').value = '';
-                                        document.getElementById('mP').value = '';
-                                        alert("Missão enviada aos terminais!");
-                                    }} className="w-full bg-zinc-100 text-black py-4 rounded-2xl text-xs font-black tracking-widest">LANÇAR MISSÃO</button>
                                 </div>
-                            </section>
+                            ))}
                         </div>
                     )}
                 </div>
@@ -189,7 +109,7 @@
         }
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<WakandaApp />);
+        root.render(<App />);
     </script>
 </body>
 </html>
