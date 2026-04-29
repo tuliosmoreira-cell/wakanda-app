@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wakanda - Grupo Fechado</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { background-color: black; color: white; }
+        .gradient-text {
+            background: linear-gradient(to right, #a855f7, #eab308);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        const INITIAL_USERS = [
+            { id: 1, name: 'Tulipa', role: 'ADM', score: 0 },
+            { id: 2, name: 'Anderson', role: 'USER', score: 0 },
+            { id: 3, name: 'Yuri', role: 'USER', score: 0 },
+            { id: 4, name: 'Thales', role: 'USER', score: 0 },
+            { id: 5, name: 'Negão', role: 'USER', score: 0 },
+            { id: 6, name: 'Léo', role: 'USER', score: 0 },
+            { id: 7, name: 'Júlio', role: 'USER', score: 0 },
+            { id: 8, name: 'Radar', role: 'USER', score: 0 },
+            { id: 9, name: 'Heltin', role: 'USER', score: 0 }
+        ];
+
+        function App() {
+            const [view, setView] = useState('LANDING');
+            const [user, setUser] = useState(null);
+
+            const handleGroupPass = (e) => {
+                if (e.target.value.toLowerCase() === 'wakanda') setView('LOGIN');
+            };
+
+            const handleLogin = (name, pass) => {
+                if (name === 'Tulipa' && pass !== 'tulipa2003') {
+                    alert("Senha de ADM incorreta!");
+                    return;
+                }
+                const found = INITIAL_USERS.find(u => u.name === name);
+                setUser(found);
+                setView('DASHBOARD');
+            };
+
+            return (
+                <div className="min-h-screen flex flex-col">
+                    {view === 'LANDING' && (
+                        <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+                            <div className="w-64 h-64 bg-zinc-900 rounded-full mb-8 flex items-center justify-center border-2 border-purple-500 shadow-[0_0_50px_rgba(168,85,247,0.2)]">
+                                <span className="text-6xl text-silver">🐾</span>
+                            </div>
+                            <h1 className="text-5xl font-black mb-4 gradient-text">WAKANDA</h1>
+                            <button onClick={() => setView('GROUP_AUTH')} className="bg-white text-black px-10 py-4 rounded-full font-bold tracking-widest hover:scale-105 transition">ENTRAR</button>
+                        </div>
+                    )}
+
+                    {view === 'GROUP_AUTH' && (
+                        <div className="flex-1 flex flex-col items-center justify-center p-6">
+                            <p className="text-zinc-500 mb-4 uppercase tracking-widest text-xs">Senha do Grupo</p>
+                            <input type="password" placeholder="••••" className="bg-transparent border-b-2 border-purple-900 text-center text-4xl p-2 outline-none focus:border-yellow-500 w-full max-w-xs transition-all" onChange={handleGroupPass} />
+                        </div>
+                    )}
+
+                    {view === 'LOGIN' && (
+                        <div className="flex-1 flex flex-col items-center justify-center p-6">
+                            <div className="w-full max-w-sm space-y-4">
+                                <h2 className="text-2xl font-bold mb-6 text-center">Identifique-se</h2>
+                                <select id="userName" className="w-full bg-zinc-900 p-4 rounded-2xl border border-zinc-800 outline-none appearance-none">
+                                    {INITIAL_USERS.map(u => <option key={u.id} value={u.name}>{u.name}</option>)}
+                                </select>
+                                <input id="userPass" type="password" placeholder="Sua senha" className="w-full bg-zinc-900 p-4 rounded-2xl border border-zinc-800 outline-none" />
+                                <button onClick={() => handleLogin(document.getElementById('userName').value, document.getElementById('userPass').value)} className="w-full bg-purple-600 p-4 rounded-2xl font-bold uppercase">Entrar</button>
+                            </div>
+                        </div>
+                    )}
+
+                    {view === 'DASHBOARD' && (
+                        <div className="flex-1">
+                            <header className="p-6 flex justify-between items-center border-b border-zinc-900">
+                                <span className="font-bold tracking-tighter text-xl">WAKANDA</span>
+                                {user?.role === 'ADM' && <span className="bg-yellow-500 text-black px-3 py-1 rounded-full text-[10px] font-bold">ADM</span>}
+                            </header>
+                            <main className="p-6">
+                                <div className="bg-zinc-900 p-6 rounded-[2rem] border border-zinc-800 mb-8">
+                                    <p className="text-zinc-400 text-xs uppercase mb-1">Bem-vindo,</p>
+                                    <h3 className="text-3xl font-bold">{user?.name}</h3>
+                                </div>
+                                <h4 className="text-zinc-500 text-xs uppercase mb-4 tracking-widest">Ranking Global</h4>
+                                <div className="space-y-3">
+                                    {INITIAL_USERS.map((u, i) => (
+                                        <div key={u.id} className="flex items-center justify-between bg-zinc-900/50 p-4 rounded-2xl border border-zinc-800/50">
+                                            <span className="font-medium">{i+1}. {u.name}</span>
+                                            <span className="text-yellow-500 font-bold">{u.score} PTS</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </main>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
