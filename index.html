@@ -396,6 +396,8 @@ body{font-family:'Rajdhani',sans-serif;color:var(--text);display:flex;flex-direc
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
 // ══════════════════════════════════════
 //  CONSTANTS
@@ -433,9 +435,13 @@ let pendingPhotoData = null;
 let pendingUserId = null; // for password flow
 let phraseTimer = null;
 
-const CLOUD_URL = '/.netlify/functions/state';
+const SUPABASE_URL = "https://cssiwckxwjgggjzvfmpa.supabase.co";
+const SUPABASE_KEY = "sb_publishable_ZmauVLEIiLehyse_6tmQDQ_vLLlTfPT";
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
 let cloudSaveTimer = null;
-let isCloudLoading = false;
+let isCloudLoading = true;
+let lastCloudPayload = "";
 
 function localUserId(){
   const v = localStorage.getItem('wk3_currentUser');
@@ -467,35 +473,66 @@ function saveS() {
 function scheduleCloudSave(){
   if(isCloudLoading) return;
   clearTimeout(cloudSaveTimer);
-  cloudSaveTimer = setTimeout(saveCloudState, 350);
+  cloudSaveTimer = setTimeout(saveCloudState, 500);
 }
 async function saveCloudState(){
   try{
-    await fetch(CLOUD_URL,{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(stateForCloud())
-    });
-  }catch(e){ console.warn('Não foi possível salvar online agora.', e); }
+    const payload = stateForCloud();
+    const serialized = JSON.stringify(payload);
+    if(serialized === lastCloudPayload) return;
+    lastCloudPayload = serialized;
+
+    const { error } = await supabaseClient
+      .from('app_data')
+      .upsert({ id: 1, data: payload }, { onConflict: 'id' });
+
+    if(error) throw error;
+    console.log('Wakanda salvo online no Supabase.');
+  }catch(e){
+    console.warn('Não foi possível salvar online agora.', e);
+  }
 }
 async function loadCloudState(shouldRender=false){
   try{
     isCloudLoading = true;
-    const r = await fetch(CLOUD_URL,{cache:'no-store'});
-    if(!r.ok) throw new Error('Falha ao carregar estado online');
-    const data = await r.json();
-    if(data && data.members){
+    let { data, error } = await supabaseClient
+      .from('app_data')
+      .select('data')
+      .eq('id', 1)
+      .limit(1);
+
+    if(error) throw error;
+
+    if(!data || !data.length){
+      const latest = await supabaseClient
+        .from('app_data')
+        .select('data')
+        .order('created_at', { ascending:false })
+        .limit(1);
+      if(latest.error) throw latest.error;
+      data = latest.data || [];
+    }
+
+    const onlineState = data && data.length ? data[0].data : null;
+
+    if(onlineState && onlineState.members){
       const currentUser = S.currentUser;
-      S = data;
+      S = onlineState;
       S.currentUser = currentUser;
+      lastCloudPayload = JSON.stringify(stateForCloud());
       try{ localStorage.setItem('wk3',JSON.stringify(S)); }catch(e){}
       if(shouldRender && document.getElementById('S-main').classList.contains('active')){
         updateTopbar();
         goTo(currentTab);
       }
+    } else {
+      await saveCloudState();
     }
-  }catch(e){ console.warn('Usando dados locais por enquanto.', e); }
-  finally{ isCloudLoading = false; }
+  }catch(e){
+    console.warn('Usando dados locais por enquanto.', e);
+  } finally {
+    isCloudLoading = false;
+  }
 }
 
 function initS() {
@@ -1202,63 +1239,6 @@ setInterval(()=>{
   if(el){el.style.opacity='0';setTimeout(()=>{qIdx=(qIdx+1)%QUOTES.length;el.textContent=QUOTES[qIdx];el.style.opacity='1';},300);}
 },4500);
 </script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<script>
-const SUPABASE_URL = "https://cssiwckxwjgggjzvfmpa.supabase.co";
-const SUPABASE_KEY = "sb_publishable_ZmauVLEIiLehyse_6tmQDQ_vLLlTfPT";
-
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-// 👉 CARREGAR DADOS
-async function loadAppData() {
-  const { data, error } = await supabase
-    .from('app_data')
-    .select('*')
-    .order('id', { ascending: false })
-    .limit(1);
-
-  if (data && data.length > 0) {
-    return data[0].data;
-  }
-
-  return null;
-}
-
-// 👉 SALVAR DADOS
-async function saveAppData(state) {
-  const { error } = await supabase
-    .from('app_data')
-    .insert([{ data: state }]);
-
-  if (error) {
-    console.error("Erro ao salvar:", error);
-  }
-}
-
-// 👉 SUBSTITUIR LOCALSTORAGE
-async function initSync() {
-  const serverData = await loadAppData();
-
-  if (serverData) {
-    localStorage.setItem('wakanda_state', JSON.stringify(serverData));
-    location.reload();
-  }
-}
-
-// 👉 SALVAR AUTOMÁTICO
-function autoSave() {
-  const state = JSON.parse(localStorage.getItem('wakanda_state'));
-  if (state) {
-    saveAppData(state);
-  }
-}
-
-// inicia
-initSync();
-
-// salva a cada 3 segundos
-setInterval(autoSave, 3000);
-</script>
 </body>
 </html>
