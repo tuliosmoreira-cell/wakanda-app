@@ -437,11 +437,11 @@ let phraseTimer = null;
 
 const SUPABASE_URL = "https://cssiwckxwjgggjzvfmpa.supabase.co";
 const SUPABASE_KEY = "sb_publishable_ZmauVLEIiLehyse_6tmQDQ_vLLlTfPT";
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
+const CLOUD_ROW_ID = 1;
+const wkSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let cloudSaveTimer = null;
-let isCloudLoading = true;
-let lastCloudPayload = "";
+let isCloudLoading = false;
+let cloudReady = false;
 
 function localUserId(){
   const v = localStorage.getItem('wk3_currentUser');
@@ -471,23 +471,20 @@ function saveS() {
   scheduleCloudSave();
 }
 function scheduleCloudSave(){
-  if(isCloudLoading) return;
+  if(isCloudLoading || !cloudReady) return;
   clearTimeout(cloudSaveTimer);
-  cloudSaveTimer = setTimeout(saveCloudState, 500);
+  cloudSaveTimer = setTimeout(saveCloudState, 350);
 }
 async function saveCloudState(){
+  if(isCloudLoading || !cloudReady) return;
   try{
     const payload = stateForCloud();
-    const serialized = JSON.stringify(payload);
-    if(serialized === lastCloudPayload) return;
-    lastCloudPayload = serialized;
-
-    const { error } = await supabaseClient
+    const { error } = await wkSupabase
       .from('app_data')
-      .upsert({ id: 1, data: payload }, { onConflict: 'id' });
+      .upsert([{ id: CLOUD_ROW_ID, data: payload }], { onConflict: 'id' });
 
     if(error) throw error;
-    console.log('Wakanda salvo online no Supabase.');
+    console.log('Wakanda salvo online');
   }catch(e){
     console.warn('Não foi possível salvar online agora.', e);
   }
@@ -495,43 +492,30 @@ async function saveCloudState(){
 async function loadCloudState(shouldRender=false){
   try{
     isCloudLoading = true;
-    let { data, error } = await supabaseClient
+    const { data, error } = await wkSupabase
       .from('app_data')
       .select('data')
-      .eq('id', 1)
-      .limit(1);
+      .eq('id', CLOUD_ROW_ID)
+      .maybeSingle();
 
     if(error) throw error;
 
-    if(!data || !data.length){
-      const latest = await supabaseClient
-        .from('app_data')
-        .select('data')
-        .order('created_at', { ascending:false })
-        .limit(1);
-      if(latest.error) throw latest.error;
-      data = latest.data || [];
-    }
-
-    const onlineState = data && data.length ? data[0].data : null;
-
-    if(onlineState && onlineState.members){
+    if(data && data.data && data.data.members){
       const currentUser = S.currentUser;
-      S = onlineState;
+      S = data.data;
       S.currentUser = currentUser;
-      lastCloudPayload = JSON.stringify(stateForCloud());
       try{ localStorage.setItem('wk3',JSON.stringify(S)); }catch(e){}
       if(shouldRender && document.getElementById('S-main').classList.contains('active')){
         updateTopbar();
         goTo(currentTab);
       }
-    } else {
-      await saveCloudState();
     }
   }catch(e){
     console.warn('Usando dados locais por enquanto.', e);
-  } finally {
+  }
+  finally{
     isCloudLoading = false;
+    cloudReady = true;
   }
 }
 
