@@ -661,6 +661,18 @@ function updateTopbar() {
   document.getElementById('adm-badge').style.display = u.id===0 ? 'block':'none';
 }
 
+function autoResumeSession() {
+  const u = getCurrent();
+  if (!u) return;
+  const loginScreen = document.getElementById('S-login');
+  const mainScreen = document.getElementById('S-main');
+  if (!loginScreen || !mainScreen) return;
+  loginScreen.classList.remove('active');
+  mainScreen.classList.add('active');
+  updateTopbar();
+  goTo(currentTab || 'home');
+}
+
 // ══════════════════════════════════════
 //  NAV
 // ══════════════════════════════════════
@@ -1218,6 +1230,7 @@ loadCloudState(false).then(()=>{
     const w=document.getElementById('cover-wrap');
     if(w) w.innerHTML=`<img src="${S.coverImg}" style="width:100%;height:100%;object-fit:cover;">`;
   }
+  autoResumeSession();
 });
 // Atualiza dados online periodicamente quando o app estiver aberto
 setInterval(()=>loadCloudState(true), 30000);
@@ -1226,6 +1239,7 @@ if(S.coverImg){
   const w=document.getElementById('cover-wrap');
   if(w) w.innerHTML=`<img src="${S.coverImg}" style="width:100%;height:100%;object-fit:cover;">`;
 }
+autoResumeSession();
 // Quote rotation
 setInterval(()=>{
   const el=document.getElementById('home-q');
