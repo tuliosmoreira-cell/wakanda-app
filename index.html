@@ -437,7 +437,6 @@ let phraseTimer = null;
 
 const SUPABASE_URL = "https://cssiwckxwjgggjzvfmpa.supabase.co";
 const SUPABASE_KEY = "sb_publishable_ZmauVLEIiLehyse_6tmQDQ_vLLlTfPT";
-const CLOUD_ROW_ID = 1;
 const wkSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let cloudSaveTimer = null;
 let isCloudLoading = false;
@@ -465,7 +464,7 @@ function loadS() {
 }
 function saveS() {
   try {
-    localStorage.setItem('wk3',JSON.stringify(S));
+    localStorage.setItem('wk3', JSON.stringify(S));
     localStorage.setItem('wk3_currentUser', S.currentUser == null ? '' : String(S.currentUser));
   } catch(e){}
   scheduleCloudSave();
@@ -473,15 +472,17 @@ function saveS() {
 function scheduleCloudSave(){
   if(isCloudLoading || !cloudReady) return;
   clearTimeout(cloudSaveTimer);
-  cloudSaveTimer = setTimeout(saveCloudState, 350);
+  cloudSaveTimer = setTimeout(saveCloudState, 500);
 }
 async function saveCloudState(){
   if(isCloudLoading || !cloudReady) return;
   try{
     const payload = stateForCloud();
+    if(!payload || !payload.members) return;
+
     const { error } = await wkSupabase
       .from('app_data')
-      .upsert([{ id: CLOUD_ROW_ID, data: payload }], { onConflict: 'id' });
+      .insert([{ data: payload }]);
 
     if(error) throw error;
     console.log('Wakanda salvo online');
@@ -490,21 +491,26 @@ async function saveCloudState(){
   }
 }
 async function loadCloudState(shouldRender=false){
+  let foundOnlineData = false;
   try{
     isCloudLoading = true;
+
     const { data, error } = await wkSupabase
       .from('app_data')
-      .select('data')
-      .eq('id', CLOUD_ROW_ID)
-      .maybeSingle();
+      .select('data, created_at')
+      .order('created_at', { ascending: false })
+      .limit(1);
 
     if(error) throw error;
 
-    if(data && data.data && data.data.members){
+    const latest = data && data.length ? data[0].data : null;
+    if(latest && latest.members){
+      foundOnlineData = true;
       const currentUser = S.currentUser;
-      S = data.data;
+      S = latest;
       S.currentUser = currentUser;
-      try{ localStorage.setItem('wk3',JSON.stringify(S)); }catch(e){}
+      try{ localStorage.setItem('wk3', JSON.stringify(S)); }catch(e){}
+
       if(shouldRender && document.getElementById('S-main').classList.contains('active')){
         updateTopbar();
         goTo(currentTab);
@@ -512,10 +518,13 @@ async function loadCloudState(shouldRender=false){
     }
   }catch(e){
     console.warn('Usando dados locais por enquanto.', e);
-  }
-  finally{
+  } finally {
     isCloudLoading = false;
     cloudReady = true;
+  }
+
+  if(!foundOnlineData && S && S.members){
+    saveCloudState();
   }
 }
 
@@ -1211,7 +1220,7 @@ loadCloudState(false).then(()=>{
   }
 });
 // Atualiza dados online periodicamente quando o app estiver aberto
-setInterval(()=>loadCloudState(true), 10000);
+setInterval(()=>loadCloudState(true), 30000);
 // Load cover if saved
 if(S.coverImg){
   const w=document.getElementById('cover-wrap');
@@ -1223,6 +1232,5 @@ setInterval(()=>{
   if(el){el.style.opacity='0';setTimeout(()=>{qIdx=(qIdx+1)%QUOTES.length;el.textContent=QUOTES[qIdx];el.style.opacity='1';},300);}
 },4500);
 </script>
-
 </body>
 </html>
